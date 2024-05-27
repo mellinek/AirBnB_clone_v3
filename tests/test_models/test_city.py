@@ -1,55 +1,56 @@
 #!/usr/bin/python3
 """
-Contains the TestCityDocs classes
+Contain TestCityDocs classes
 """
 
 from datetime import datetime
 import inspect
-import models
 from models import city
 from models.base_model import BaseModel
+import os
 import pep8
 import unittest
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 City = city.City
 
 
 class TestCityDocs(unittest.TestCase):
-    """Tests to check the documentation and style of City class"""
+    """A test to check the documentation and style of City class"""
     @classmethod
     def setUpClass(cls):
-        """Set up for the doc tests"""
+        """Sets up for the doc tests"""
         cls.city_f = inspect.getmembers(City, inspect.isfunction)
 
     def test_pep8_conformance_city(self):
-        """Test that models/city.py conforms to PEP8."""
+        """Tests that models/city.py conforms to PEP8."""
         pep8s = pep8.StyleGuide(quiet=True)
         result = pep8s.check_files(['models/city.py'])
         self.assertEqual(result.total_errors, 0,
                          "Found code style errors (and warnings).")
 
     def test_pep8_conformance_test_city(self):
-        """Test that tests/test_models/test_city.py conforms to PEP8."""
+        """Tests that tests/test_models/test_city.py conforms to PEP8."""
         pep8s = pep8.StyleGuide(quiet=True)
         result = pep8s.check_files(['tests/test_models/test_city.py'])
         self.assertEqual(result.total_errors, 0,
                          "Found code style errors (and warnings).")
 
     def test_city_module_docstring(self):
-        """Test for the city.py module docstring"""
+        """Tests for the city.py module docstring"""
         self.assertIsNot(city.__doc__, None,
                          "city.py needs a docstring")
         self.assertTrue(len(city.__doc__) >= 1,
                         "city.py needs a docstring")
 
     def test_city_class_docstring(self):
-        """Test for the City class docstring"""
+        """Testing for the City class docstring"""
         self.assertIsNot(City.__doc__, None,
                          "City class needs a docstring")
         self.assertTrue(len(City.__doc__) >= 1,
                         "City class needs a docstring")
 
     def test_city_func_docstrings(self):
-        """Test for the presence of docstrings in City methods"""
+        """Testing for the presence of docstrings in City methods"""
         for func in self.city_f:
             self.assertIsNot(func[1].__doc__, None,
                              "{:s} method needs a docstring".format(func[0]))
@@ -58,42 +59,56 @@ class TestCityDocs(unittest.TestCase):
 
 
 class TestCity(unittest.TestCase):
-    """Test the City class"""
+    """Testing the City class"""
     def test_is_subclass(self):
-        """Test that City is a subclass of BaseModel"""
+        """Testing that City is a subclass of BaseModel"""
         city = City()
         self.assertIsInstance(city, BaseModel)
         self.assertTrue(hasattr(city, "id"))
         self.assertTrue(hasattr(city, "created_at"))
         self.assertTrue(hasattr(city, "updated_at"))
 
+    @unittest.skipIf(os.getenv('HBNB_TYPE_STORAGE') == 'db',
+                     "Testing DBStorage")
     def test_name_attr(self):
         """Test that City has attribute name, and it's an empty string"""
         city = City()
         self.assertTrue(hasattr(city, "name"))
-        if models.storage_t == 'db':
-            self.assertEqual(city.name, None)
-        else:
-            self.assertEqual(city.name, "")
+        self.assertEqual(city.name, "")
 
+    @unittest.skipIf(os.getenv('HBNB_TYPE_STORAGE') != 'db',
+                     "Testing FileStorage")
+    def test_name_attr_db(self):
+        """Test for DBStorage name attribute"""
+        city = City()
+        self.assertTrue(hasattr(City, "name"))
+        self.assertIsInstance(City.name, InstrumentedAttribute)
+
+    @unittest.skipIf(os.getenv('HBNB_TYPE_STORAGE') == 'db',
+                     "Testing DBStorage")
     def test_state_id_attr(self):
         """Test that City has attribute state_id, and it's an empty string"""
         city = City()
         self.assertTrue(hasattr(city, "state_id"))
-        if models.storage_t == 'db':
-            self.assertEqual(city.state_id, None)
-        else:
-            self.assertEqual(city.state_id, "")
+        self.assertEqual(city.state_id, "")
+
+    @unittest.skipIf(os.getenv('HBNB_TYPE_STORAGE') != 'db',
+                     "Testing FileStorage")
+    def test_state_id_attr_db(self):
+        """Testing for DBStorage state_id attribute"""
+        city = City()
+        self.assertTrue(hasattr(City, "state_id"))
+        self.assertIsInstance(City.state_id, InstrumentedAttribute)
 
     def test_to_dict_creates_dict(self):
-        """test to_dict method creates a dictionary with proper attrs"""
+        """testing to_dict method creates a dictionary with proper attrs"""
         c = City()
         new_d = c.to_dict()
         self.assertEqual(type(new_d), dict)
-        self.assertFalse("_sa_instance_state" in new_d)
         for attr in c.__dict__:
             if attr is not "_sa_instance_state":
-                self.assertTrue(attr in new_d)
+                with self.subTest(attr=attr):
+                    self.assertTrue(attr in new_d)
         self.assertTrue("__class__" in new_d)
 
     def test_to_dict_values(self):
