@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Contains the FileStorage class
+Contains FileStorage class
 """
 
 import json
@@ -17,7 +17,7 @@ classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
 
 
 class FileStorage:
-    """serializes instances to a JSON file & deserializes back to instances"""
+    """serializing instances to a JSON file & deserializes back to instances"""
 
     # string - path to the JSON file
     __file_path = "file.json"
@@ -25,7 +25,7 @@ class FileStorage:
     __objects = {}
 
     def all(self, cls=None):
-        """returns the dictionary __objects"""
+        """returns dictionary __objects"""
         if cls is not None:
             new_dict = {}
             for key, value in self.__objects.items():
@@ -41,7 +41,7 @@ class FileStorage:
             self.__objects[key] = obj
 
     def save(self):
-        """serializes __objects to the JSON file (path: __file_path)"""
+        """serializing __objects to the JSON file (path: __file_path)"""
         json_objects = {}
         for key in self.__objects:
             json_objects[key] = self.__objects[key].to_dict()
@@ -49,7 +49,7 @@ class FileStorage:
             json.dump(json_objects, f)
 
     def reload(self):
-        """deserializes the JSON file to __objects"""
+        """deserializing the JSON file to __objects"""
         try:
             with open(self.__file_path, 'r') as f:
                 jo = json.load(f)
@@ -68,3 +68,22 @@ class FileStorage:
     def close(self):
         """call reload() method for deserializing the JSON file to objects"""
         self.reload()
+
+    def get(self, cls, id):
+        """Retrive obj from a class name and id"""
+        if cls is not None and type(cls) is str and id is not None and\
+           type(id) is str and cls in classes:
+            key = cls + '.' + id
+            obj = self.__objects.get(key, None)
+            return obj
+        else:
+            return None
+
+    def count(self, cls=None):
+        """Count num objects in FileStorage"""
+        total = 0
+        if type(cls) == str and cls in classes:
+            total = len(self.all(cls))
+        elif cls is None:
+            total = len(self.__objects)
+        return total
